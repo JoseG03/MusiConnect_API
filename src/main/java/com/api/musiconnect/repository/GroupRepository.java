@@ -1,9 +1,9 @@
 package com.api.musiconnect.repository;
 
-import com.api.musiconnect.model.Group;
+import com.api.musiconnect.model.entity.Group;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface GroupRepository extends JpaRepository<Group, Integer>
+public interface GroupRepository extends JpaRepository<Group, Long>
 {
 
 }
