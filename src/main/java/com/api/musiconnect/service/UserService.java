@@ -1,10 +1,14 @@
 package com.api.musiconnect.service;
 
 import com.api.musiconnect.exception.*;
-import com.api.musiconnect.model.User;
+import com.api.musiconnect.mapper.UserMapper;
+import com.api.musiconnect.model.dto.UserReqDTO;
+import com.api.musiconnect.model.dto.UserResDTO;
+import com.api.musiconnect.model.entity.User;
 import com.api.musiconnect.repository.UserRepository;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -14,10 +18,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 @Service
+@RequiredArgsConstructor
 public class UserService
 {
-    @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
     // --- OTHER FUNCTIONS ---
     // Si el nombre es válido
@@ -38,7 +43,7 @@ public class UserService
     // Si el correo es válido
     public void isEmailValid(String email)
     {
-        String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\\\.[A-Za-z]{2,6}$";
+        String EMAIL_REGEX = "^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$";
         Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
         if (email == null || email.trim().isEmpty())
@@ -65,91 +70,146 @@ public class UserService
             throw new InvalidInputException("La contraseña debe tener al menos 8 caracteres, incluyendo una mayúscula, una minúscula, un número y un carácter especial.");
         }
     }
+    // Si la fecha de nacimiento es de un mayor de edad
+    public void isBirthdateValid(LocalDate birthdate)
+    {
+        //DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        //LocalDate _birthdate = LocalDate.parse(birthdate, formatter);
+        LocalDate now = LocalDate.now();
 
+        if (Period.between(birthdate, now).getYears() < 18)
+        {
+            throw new InvalidInputException("El usuario es menor de edad.");
+        }
+    }
+    // Si el username es repetido
+    public void isUsernameDuplicated(String username, List<User> list)
+    {
+        for (User user : list)
+        {
+           if (user.getUsername().equals(username))
+           {
+               throw new InvalidInputException("Ya existe un usuario con ese username.");
+           }
+        }
+    }
+    // Si el email es repetido
+    public void isEmailDuplicated(String email, List<User> list)
+    {
+        for (User user: list)
+        {
+            if (user.getEmail().equals(email))
+            {
+                throw new InvalidInputException("Ya existe un usuario con ese email.");
+            }
+        }
+    }
 
     // --- SERVICES ---
     // Obtener todos los usuarios
-    public List<User> getUsers()
+    @Transactional
+    public List<UserResDTO> getAllUsers()
     {
-        return userRepository.findAll();
+        List<User> users = userRepository.findAll();
+        return userMapper.convertListUsertoListUserResDTO(users);
     }
 
-    // Crear usuario
-    public User createUser(User user)
+    // Registrar usuario
+    @Transactional
+    public UserResDTO registerUser(UserReqDTO userReqDTO)
     {
-        // Validaciones
-        // username
-        isUsernameValid(user.getUsername());
-        if (userRepository.existsByUsername(user.getUsername()))
-        {
-            throw new InvalidInputException("El username ya existe.");
-        }
-        // email
-        isEmailValid(user.getEmail());
-        if (userRepository.existsByEmail(user.getEmail()))
-        {
-            throw new InvalidInputException("El correo ya existe.");
-        }
-        // password
-        isPasswordValid(user.getPassword());
-        // birthdate
-        LocalDate today = LocalDate.now();
-        Period age = Period.between(user.getBirthdate(), today);
-        if (age.getYears() < 18)
-        {
-            throw new InvalidInputException("El usuario no es mayor de edad.");
-        }
-        // createdAt
-        LocalDateTime now = LocalDateTime.now();
-        user.setCreatedAt(now);
+        // Convertir: UserReqDTO -> User
+        User userReq = userMapper.convertUserReqDTOtoUser(userReqDTO);
 
-        return userRepository.save(user);
+        // Validaciones:
+        // 1. Formato correcto
+        isUsernameValid(userReq.getUsername());
+        isPasswordValid(userReq.getPassword());
+        isEmailValid(userReq.getEmail());
+        isBirthdateValid(userReq.getBirthdate());
+        // 2. Valores repetidos
+        if (userRepository.existsByUsername(userReq.getUsername()))
+        {
+            throw new InvalidInputException("Ya existe un usuario con ese username.");
+        }
+        if (userRepository.existsByEmail(userReq.getEmail()))
+        {
+            throw new InvalidInputException("Ya existe un usuario con ese email.");
+        }
+
+        // Guardar y responder
+        userReq.setCreatedAt(LocalDateTime.now());
+        userRepository.save(userReq);
+        return userMapper.convertUserToUserResDTO(userReq);
     }
 
     // Obtener usuario según su id
-    public User getUserById(int id)
+    @Transactional
+    public UserResDTO getUserById(Long id)
     {
-        return userRepository.findById(id)
-                .orElseThrow(()->new ResourceNotFoundException("Usuario no encontrado."));
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no existe."));
+        return userMapper.convertUserToUserResDTO(user);
     }
 
     // Actualizar usuario
-    public User updateUser(int id, User updatedUser)
+    @Transactional
+    public UserResDTO updateUserById(Long id, UserReqDTO userReqDTO)
     {
-        // Obtener el usuario por su id
-        User originalUser = getUserById(id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario no existe."));
+        User userReq = userMapper.convertUserReqDTOtoUser(userReqDTO);
 
         // Validaciones
-        // username
-        isUsernameValid(updatedUser.getUsername());
-        // email
-        isEmailValid(updatedUser.getEmail());
-        // password
-        isPasswordValid(updatedUser.getPassword());
-
-        // birthdate
-        LocalDate today = LocalDate.now();
-        Period updatedAge = Period.between(updatedUser.getBirthdate(), today);
-        Period oldAge = Period.between(originalUser.getBirthdate(), today);
-        if (updatedAge.getYears() != oldAge.getYears() && updatedAge.getYears() < 18)
+        // 1. Formato correcto
+        isUsernameValid(userReq.getUsername());
+        isPasswordValid(userReq.getPassword());
+        isEmailValid(userReq.getEmail());
+        isBirthdateValid(userReq.getBirthdate());
+        // 3. Son los mismos datos?
+        if (user.getUsername().equals(userReq.getUsername())
+                && user.getPassword().equals(userReq.getPassword())
+                && user.getEmail().equals(userReq.getEmail())
+                && user.getBirthdate().isEqual(userReq.getBirthdate()))
         {
-            throw new InvalidInputException("El usuario no es mayor de edad.");
+            return userMapper.convertUserToUserResDTO(user);
         }
 
-        // Actualizacion de todos los atributos
+        // 2. Valores repetidos
+        // Eliminar el usuario segun su id de la lista
+        List<User> usersList = userRepository.findAll();
+        for (int i = 0; i < usersList.size(); i++)
+        {
+            // Eliminamos de la lista el usuario del que vamos a actualizar
+            if (usersList.get(i).getId().equals(id))
+            {
+                usersList.remove(i);
+                break;
+            }
+        }
+        isUsernameDuplicated(userReq.getUsername(), usersList);
+        isEmailDuplicated(userReq.getEmail(), usersList);
 
-
-        return userRepository.save(originalUser);
+        // Guardar y responder
+        user.setUsername(userReq.getUsername());
+        user.setPassword(userReq.getPassword());
+        user.setEmail(userReq.getEmail());
+        user.setBirthdate(userReq.getBirthdate());
+        user.setUpdatedAt(LocalDateTime.now()); // Actualizamos a la fecha actual
+        userRepository.save(user);
+        return userMapper.convertUserToUserResDTO(user);
     }
 
     // Eliminar usuario
-    public String deleteUser(int id)
+    @Transactional
+    public String deleteUserById(Long id)
     {
         if (!userRepository.existsById(id))
         {
-            throw new ResourceNotFoundException("Usuario no encontrado.");
+            throw new ResourceNotFoundException("El usuario no existe.");
         }
+
         userRepository.deleteById(id);
-        return "El usuario ha sido eliminado con éxito.";
+        return "El usuario ha sido eliminado.";
     }
 }

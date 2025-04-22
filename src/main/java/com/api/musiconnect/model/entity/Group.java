@@ -1,4 +1,4 @@
-package com.api.musiconnect.model;
+package com.api.musiconnect.model.entity;
 
 import jakarta.persistence.*;
 
