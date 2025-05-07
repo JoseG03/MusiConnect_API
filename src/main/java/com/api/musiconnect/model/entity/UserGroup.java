@@ -1,5 +1,6 @@
 package com.api.musiconnect.model.entity;
 
+import com.api.musiconnect.model.enums.UserGroupStatus;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -19,6 +20,9 @@ public class UserGroup
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "group_id")
     private Group group;
+
+    @Column(nullable = false)
+    private UserGroupStatus status;
 
     @Column(nullable = false)
     private LocalDateTime registerAt;

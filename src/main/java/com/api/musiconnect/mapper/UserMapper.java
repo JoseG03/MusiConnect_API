@@ -1,11 +1,17 @@
 package com.api.musiconnect.mapper;
 
-import com.api.musiconnect.dto.request.CreateUserRequest;
+import com.api.musiconnect.dto.request.RegisterUserRequest;
+import com.api.musiconnect.dto.request.GeneralUpdateUserRequest;
 import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.model.entity.User;
+import com.api.musiconnect.model.enums.Gender;
+import com.api.musiconnect.model.enums.Instrument;
+import com.api.musiconnect.model.enums.UserStatus;
+import com.api.musiconnect.model.enums.UserType;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,8 +19,8 @@ import java.util.stream.Collectors;
 @Component
 public class UserMapper
 {
-    // Convertir UserRequest a User
-    public User UserRequestToUser(CreateUserRequest request)
+    // Convertir CreateUserRequest a User
+    public User Register_UserRequestToUser(RegisterUserRequest request)
     {
         if (request == null)
         {
@@ -23,12 +29,62 @@ public class UserMapper
 
         // Formato de fecha para LocalDate
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        // Tipo de usuario
+        UserType userType = UserType.ARTIST;
+        // Fecha de creación
+        LocalDateTime now = LocalDateTime.now();
+        // Estado de disponibilidad
+        UserStatus status = UserStatus.ONLINE;
+        // Lista de instrumentos: vacío
+        List<Instrument> instruments = List.of();
+        // Convertir: String a Enum. Atributo gender
+        Gender gender = Gender.valueOf(request.gender());
 
         return User.builder()
+                .userType(userType)
                 .email(request.email())
                 .username(request.username())
                 .password(request.password())
                 .birthdate(LocalDate.parse(request.birthdate(), formatter)) // Convertir de String a LocalDate si es necesario
+                .gender(gender)
+                .bio(null)
+                .location(null)
+                .status(status)
+                .instruments(instruments)
+                .createdAt(now)
+                .build();
+    }
+
+    // Convertir UpdateUserRequest a User
+    public User Update_UserRequestToUser(GeneralUpdateUserRequest request)
+    {
+        if (request == null)
+        {
+            return null;
+        }
+
+        // Formato de fecha para LocalDate
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        // Convertir: String a Enum. Atributo UserType
+        UserType userType = UserType.valueOf(request.userType());
+        // Convertir: String a Enum. Atributo UserStatus
+        UserStatus status = UserStatus.valueOf(request.status());
+        // Convertir: String a Enum. Atributo gender
+        Gender gender = Gender.valueOf(request.gender());
+        // Fecha de creación
+        LocalDateTime now = LocalDateTime.now();
+
+        return User.builder()
+                .userType(userType)
+                .email(request.email())
+                .username(request.username())
+                .password(request.password())
+                .birthdate(LocalDate.parse(request.birthdate(), formatter)) // Convertir de String a LocalDate si es necesario
+                .gender(gender)
+                .bio(request.bio())
+                .location(request.location())
+                .status(status)
+                .updatedAt(now)
                 .build();
     }
 
@@ -42,10 +98,16 @@ public class UserMapper
 
         return new UserResponse(
                 user.getId(),
+                user.getUserType(),
                 user.getEmail(),
                 user.getUsername(),
                 user.getPassword(),
                 user.getBirthdate(),
+                user.getGender(),
+                user.getBio(),
+                user.getLocation(),
+                user.getStatus(),
+                user.getInstruments().size(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );
@@ -61,19 +123,6 @@ public class UserMapper
 
         return users.stream()
                 .map(this::UserToUserResponse)
-                .collect(Collectors.toList());
-    }
-
-    // Convertir List<UserRequest> a List<User>
-    public List<User> UserRequestsToUsers(List<CreateUserRequest> requests)
-    {
-        if (requests == null)
-        {
-            return null;
-        }
-
-        return requests.stream()
-                .map(this::UserRequestToUser)
                 .collect(Collectors.toList());
     }
 }

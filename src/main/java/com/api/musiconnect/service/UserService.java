@@ -1,6 +1,7 @@
 package com.api.musiconnect.service;
 
-import com.api.musiconnect.dto.request.CreateUserRequest;
+import com.api.musiconnect.dto.request.RegisterUserRequest;
+import com.api.musiconnect.dto.request.GeneralUpdateUserRequest;
 import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.exception.DuplicateResourceException;
 import com.api.musiconnect.exception.ResourceNotFoundException;
@@ -11,7 +12,6 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,7 +23,7 @@ public class UserService
 
     // Registrar usuario
     @Transactional
-    public UserResponse registerUser(CreateUserRequest request)
+    public UserResponse registerUser(RegisterUserRequest request)
     {
         // Saber si el usuario con dichos datos ya está en la base de datos
         if (userRepository.existsUserByEmail(request.email()))
@@ -35,10 +35,7 @@ public class UserService
             throw new DuplicateResourceException("El usuario con dicho username ya existe.");
         }
 
-        User user = userMapper.UserRequestToUser(request);
-
-        LocalDateTime now = LocalDateTime.now();
-        user.setCreatedAt(now);
+        User user = userMapper.Register_UserRequestToUser(request);
 
         userRepository.save(user);
 
@@ -64,18 +61,23 @@ public class UserService
 
     // Actualizar usuario según su id
     @Transactional
-    public UserResponse updateUserById(Long id, CreateUserRequest request)
+    public UserResponse updateUserById(Long id, GeneralUpdateUserRequest request)
     {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("El usuario con id " + id + " no existe."));
 
-        User userReq = userMapper.UserRequestToUser(request);
+        User userReq = userMapper.Update_UserRequestToUser(request);
 
+        user.setUserType(userReq.getUserType());
         user.setEmail(userReq.getEmail());
         user.setUsername(userReq.getUsername());
         user.setPassword(userReq.getPassword());
         user.setBirthdate(userReq.getBirthdate());
-        user.setUpdatedAt(LocalDateTime.now());
+        user.setGender(userReq.getGender());
+        user.setBio(userReq.getBio());
+        user.setLocation(userReq.getLocation());
+        user.setStatus(userReq.getStatus());
+        user.setUpdatedAt(userReq.getUpdatedAt());
 
         userRepository.save(user);
 

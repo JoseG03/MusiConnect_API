@@ -1,6 +1,7 @@
 package com.api.musiconnect.controller;
 
-import com.api.musiconnect.dto.request.CreateUserRequest;
+import com.api.musiconnect.dto.request.RegisterUserRequest;
+import com.api.musiconnect.dto.request.GeneralUpdateUserRequest;
 import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.service.UserService;
 import jakarta.validation.Valid;
@@ -19,7 +20,7 @@ public class UserController
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody CreateUserRequest request)
+    public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody RegisterUserRequest request)
     {
         return new ResponseEntity<>(userService.registerUser(request), HttpStatus.CREATED);
     }
@@ -37,7 +38,7 @@ public class UserController
     }
 
     @PutMapping(path = "/{id}")
-    public ResponseEntity<UserResponse> updateUserById(@PathVariable Long id, @Valid @RequestBody CreateUserRequest request)
+    public ResponseEntity<UserResponse> updateUserById(@PathVariable Long id, @Valid @RequestBody GeneralUpdateUserRequest request)
     {
         return new ResponseEntity<>(userService.updateUserById(id, request), HttpStatus.ACCEPTED);
     }
