@@ -1,9 +1,10 @@
 package com.api.musiconnect.controller;
 
-import com.api.musiconnect.model.dto.UserReqDTO;
-import com.api.musiconnect.model.dto.UserResDTO;
+import com.api.musiconnect.dto.request.CreateUserRequest;
+import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,33 +13,33 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController
 {
-    @Autowired
-    private UserService userService;
+    private final UserService userService;
+
+    @PostMapping
+    public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody CreateUserRequest request)
+    {
+        return new ResponseEntity<>(userService.registerUser(request), HttpStatus.CREATED);
+    }
 
     @GetMapping
-    public ResponseEntity<List<UserResDTO>> getAllUsers()
+    public ResponseEntity<List<UserResponse>> getAllUsers()
     {
         return new ResponseEntity<>(userService.getAllUsers(), HttpStatus.OK);
     }
 
-    @GetMapping(path = "/{id}")
-    public ResponseEntity<UserResDTO> getUserById(@PathVariable Long id)
+    @GetMapping(path = "/{username}")
+    public ResponseEntity<UserResponse> getUserByUsername(@PathVariable String username)
     {
-        return new ResponseEntity<>(userService.getUserById(id), HttpStatus.OK);
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<UserResDTO> registerUser(@RequestBody UserReqDTO user)
-    {
-        return new ResponseEntity<>(userService.registerUser(user), HttpStatus.CREATED);
+        return new ResponseEntity<>(userService.getUserByUsername(username), HttpStatus.OK);
     }
 
     @PutMapping(path = "/{id}")
-    public ResponseEntity<UserResDTO> updateUserById(@PathVariable Long id, @RequestBody UserReqDTO user)
+    public ResponseEntity<UserResponse> updateUserById(@PathVariable Long id, @Valid @RequestBody CreateUserRequest request)
     {
-        return new ResponseEntity<>(userService.updateUserById(id, user), HttpStatus.OK);
+        return new ResponseEntity<>(userService.updateUserById(id, request), HttpStatus.ACCEPTED);
     }
 
     @DeleteMapping(path = "/{id}")
