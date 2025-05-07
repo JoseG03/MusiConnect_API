@@ -1,7 +1,8 @@
 package com.api.musiconnect.mapper;
 
+import com.api.musiconnect.dto.request.GeneralUpdateUser;
 import com.api.musiconnect.dto.request.RegisterUserRequest;
-import com.api.musiconnect.dto.request.GeneralUpdateUserRequest;
+import com.api.musiconnect.dto.request.ConfigUpdateUserRequest;
 import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.model.entity.User;
 import com.api.musiconnect.model.enums.Gender;
@@ -20,7 +21,7 @@ import java.util.stream.Collectors;
 public class UserMapper
 {
     // Convertir CreateUserRequest a User
-    public User Register_UserRequestToUser(RegisterUserRequest request)
+    public User RegisterUser_UserRequestToUser(RegisterUserRequest request)
     {
         if (request == null)
         {
@@ -56,7 +57,7 @@ public class UserMapper
     }
 
     // Convertir UpdateUserRequest a User
-    public User Update_UserRequestToUser(GeneralUpdateUserRequest request)
+    public User ConfigUpdate_UserRequestToUser(ConfigUpdateUserRequest request)
     {
         if (request == null)
         {
@@ -124,5 +125,21 @@ public class UserMapper
         return users.stream()
                 .map(this::UserToUserResponse)
                 .collect(Collectors.toList());
+    }
+
+    // Convertir GeneralUpdate a User
+    public User GeneralUpdate_UserRequestToUser(GeneralUpdateUser request)
+    {
+        if (request == null)
+        {
+            return null;
+        }
+
+        // Convertir: String a Enum. Atributo UserStatus
+        UserStatus status = UserStatus.valueOf(request.status());
+
+        return User.builder()
+                .status(status)
+                .build();
     }
 }

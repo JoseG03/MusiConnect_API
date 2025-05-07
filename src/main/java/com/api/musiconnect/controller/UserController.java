@@ -1,7 +1,8 @@
 package com.api.musiconnect.controller;
 
+import com.api.musiconnect.dto.request.GeneralUpdateUser;
 import com.api.musiconnect.dto.request.RegisterUserRequest;
-import com.api.musiconnect.dto.request.GeneralUpdateUserRequest;
+import com.api.musiconnect.dto.request.ConfigUpdateUserRequest;
 import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.service.UserService;
 import jakarta.validation.Valid;
@@ -37,15 +38,21 @@ public class UserController
         return new ResponseEntity<>(userService.getUserByUsername(username), HttpStatus.OK);
     }
 
-    @PutMapping(path = "/{id}")
-    public ResponseEntity<UserResponse> updateUserById(@PathVariable Long id, @Valid @RequestBody GeneralUpdateUserRequest request)
+    @PutMapping(path = "/config_user={id}")
+    public ResponseEntity<UserResponse> configUpdateUserById(@PathVariable Long id, @Valid @RequestBody ConfigUpdateUserRequest request)
     {
-        return new ResponseEntity<>(userService.updateUserById(id, request), HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(userService.configUpdateUserById(id, request), HttpStatus.ACCEPTED);
     }
 
     @DeleteMapping(path = "/{id}")
     public ResponseEntity<String> deleteUserById(@PathVariable Long id)
     {
         return new ResponseEntity<>(userService.deleteUserById(id), HttpStatus.OK);
+    }
+
+    @PutMapping
+    public ResponseEntity<UserResponse> generalUpdateUserById(@Valid @RequestBody GeneralUpdateUser request)
+    {
+        return new ResponseEntity<>(userService.generalUpdateUserById(request), HttpStatus.ACCEPTED);
     }
 }

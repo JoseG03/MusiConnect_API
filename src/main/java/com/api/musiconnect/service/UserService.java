@@ -1,7 +1,8 @@
 package com.api.musiconnect.service;
 
+import com.api.musiconnect.dto.request.GeneralUpdateUser;
 import com.api.musiconnect.dto.request.RegisterUserRequest;
-import com.api.musiconnect.dto.request.GeneralUpdateUserRequest;
+import com.api.musiconnect.dto.request.ConfigUpdateUserRequest;
 import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.exception.DuplicateResourceException;
 import com.api.musiconnect.exception.ResourceNotFoundException;
@@ -35,7 +36,7 @@ public class UserService
             throw new DuplicateResourceException("El usuario con dicho username ya existe.");
         }
 
-        User user = userMapper.Register_UserRequestToUser(request);
+        User user = userMapper.RegisterUser_UserRequestToUser(request);
 
         userRepository.save(user);
 
@@ -61,12 +62,12 @@ public class UserService
 
     // Actualizar usuario según su id
     @Transactional
-    public UserResponse updateUserById(Long id, GeneralUpdateUserRequest request)
+    public UserResponse configUpdateUserById(Long id, ConfigUpdateUserRequest request)
     {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("El usuario con id " + id + " no existe."));
 
-        User userReq = userMapper.Update_UserRequestToUser(request);
+        User userReq = userMapper.ConfigUpdate_UserRequestToUser(request);
 
         user.setUserType(userReq.getUserType());
         user.setEmail(userReq.getEmail());
@@ -92,5 +93,21 @@ public class UserService
 
         userRepository.delete(user);
         return "El usuario se eliminó exitosamente.";
+    }
+
+    // Cambiar las configuraciones generales del usuario según su id
+    @Transactional
+    public UserResponse generalUpdateUserById(GeneralUpdateUser request)
+    {
+        User user = userRepository.findById(request.id())
+                .orElseThrow(() -> new ResourceNotFoundException("El usuario con id " + request.id() + " no existe."));
+
+        User userRequest = userMapper.GeneralUpdate_UserRequestToUser(request);
+
+        user.setStatus(userRequest.getStatus());
+
+        userRepository.save(user);
+
+        return userMapper.UserToUserResponse(user);
     }
 }
