@@ -1,10 +1,8 @@
 package com.api.musiconnect.mapper;
 
-import com.api.musiconnect.model.dto.UserReqDTO;
-import com.api.musiconnect.model.dto.UserResDTO;
+import com.api.musiconnect.dto.request.CreateUserRequest;
+import com.api.musiconnect.dto.response.UserResponse;
 import com.api.musiconnect.model.entity.User;
-import lombok.RequiredArgsConstructor;
-import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
@@ -13,40 +11,69 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-@RequiredArgsConstructor
 public class UserMapper
 {
-    private final ModelMapper modelMapper;
-
-    // Convertir: User -> UserResDTO
-    public UserResDTO convertUserToUserResDTO(User user)
+    // Convertir UserRequest a User
+    public User UserRequestToUser(CreateUserRequest request)
     {
-        return modelMapper.map(user, UserResDTO.class);
+        if (request == null)
+        {
+            return null;
+        }
+
+        // Formato de fecha para LocalDate
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        return User.builder()
+                .email(request.email())
+                .username(request.username())
+                .password(request.password())
+                .birthdate(LocalDate.parse(request.birthdate(), formatter)) // Convertir de String a LocalDate si es necesario
+                .build();
     }
 
-    // Convertir: UserReqDTO -> User
-    public User convertUserReqDTOtoUser(UserReqDTO userReqDTO)
+    // Convertir User a UserResponse
+    public UserResponse UserToUserResponse(User user)
     {
-        User user = modelMapper.map(userReqDTO, User.class);
+        if (user == null)
+        {
+            return null;
+        }
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        LocalDate birthdate = LocalDate.parse(userReqDTO.getBirthdate(), formatter);
-        user.setBirthdate(birthdate);
-
-        return user;
+        return new UserResponse(
+                user.getId(),
+                user.getEmail(),
+                user.getUsername(),
+                user.getPassword(),
+                user.getBirthdate(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
+        );
     }
 
-    // Convertir: List<User> -> List<UserResDTO>
-    public List<UserResDTO> convertListUsertoListUserResDTO(List<User> users)
+    // Convertir List<User> a List<UserResponse>
+    public List<UserResponse> UsersToUsersResponse(List<User> users)
     {
+        if (users == null)
+        {
+            return null;
+        }
+
         return users.stream()
-                .map(this::convertUserToUserResDTO).collect(Collectors.toList());
+                .map(this::UserToUserResponse)
+                .collect(Collectors.toList());
     }
 
-    // Convertir: List<UserReqDTO> -> List<User>
-    public List<User> convertListResDTOtoListUser(List<UserReqDTO> usersReqDTO)
+    // Convertir List<UserRequest> a List<User>
+    public List<User> UserRequestsToUsers(List<CreateUserRequest> requests)
     {
-        return usersReqDTO.stream()
-                .map(this::convertUserReqDTOtoUser).collect(Collectors.toList());
+        if (requests == null)
+        {
+            return null;
+        }
+
+        return requests.stream()
+                .map(this::UserRequestToUser)
+                .collect(Collectors.toList());
     }
 }

@@ -1,4 +1,4 @@
-package com.api.musiconnect.enums;
+package com.api.musiconnect.model.enums;
 
 public enum MusicalGenre
 {
@@ -27,5 +27,6 @@ public enum MusicalGenre
     SOUNDTRACK,
     SAYA,
     CAPORAL,
+    INDIE,
     OTHER
 }
